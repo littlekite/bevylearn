@@ -1,8 +1,21 @@
 [package]
-name = "kite"
+name = "learn"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
+[dependencies.bevy]
+default-features = false # 不要包含默认的 features，而是通过下面的方式来指定
+features         = ["png"]
+version          = "0.9.1"
+
+# Enable a small amount of optimization in debug mode
+# 调试模式下启动少量的优化
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+# 为依赖项（包括Bevy）启用高度优化，但不为我们的代码启用
+[profile.dev.package."*"]
+opt-level = 3
