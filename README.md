@@ -10,4 +10,4 @@
 5. 有血条  中弹减少血量  血条为0 时默认失败
 
 #### 效果图
-![markdown](https://github.com/littlekite/bevylearn/1.png)
+![markdown](https://github.com/littlekite/bevylearn/blob/main/1.png)
