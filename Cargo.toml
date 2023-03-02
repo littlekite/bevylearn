@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies.bevy]
-default-features = false # 不要包含默认的 features，而是通过下面的方式来指定
+#default-features = false # 不要包含默认的 features，而是通过下面的方式来指定
 features         = ["png"]
 version          = "0.9.1"
 
