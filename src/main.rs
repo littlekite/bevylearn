@@ -75,9 +75,9 @@ fn  controlplayer(
         let mut x_position = transform.translation.x;
         // 根据速度时间计算新坐标
         if keyboard_input.pressed(KeyCode::A) {
-            x_position -= 1.0 * 10.0 * 1.0;
+            x_position -= 1.0 * 5.0 * 1.0;
         } else if keyboard_input.pressed(KeyCode::D) {
-            x_position += 1.0 * 10.0 * 1.0;
+            x_position += 1.0 * 5.0 * 1.0;
         } else {
             return;
         } 
