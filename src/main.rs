@@ -25,11 +25,36 @@ fn main() {
 
     app.add_startup_system(step);
 
+    app.register_type::<Stats>();
+
     app.run();
 }
 
 #[derive(Component)]
 pub struct Player;
+
+/// Bundle added to a fighter stub, in order to activate it.
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    pub stats: Stats
+}
+
+
+
+#[derive(Component, Clone, Debug, Reflect)]
+pub struct Stats {
+    pub max_health: i32,
+    pub movement_speed: f32,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Stats {
+            max_health: 100,
+            movement_speed: 17000.,
+        }
+    }
+}
 
 // 坦克刷新子弹间隔
 pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 2.0;
@@ -37,6 +62,9 @@ pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 2.0;
 // 坦克刷新子弹计时器
 #[derive(Component, Deref, DerefMut)]
 pub struct TankRefreshBulletTimer(pub Timer);
+
+
+
 
 
 fn step(
@@ -67,10 +95,13 @@ fn step(
         ..default()
     };
 
+    let player_info_bundle = PlayerBundle {
+        stats: Stats { max_health: (100), movement_speed: (1500.) }
+    };
     commands.spawn(Player).insert(player_bundle).insert(TankRefreshBulletTimer(Timer::from_seconds(
         TANK_REFRESH_BULLET_INTERVAL,
         TimerMode::Once,
-    )));
+    ))).insert(player_info_bundle);
 
 
 }
