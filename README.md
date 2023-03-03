@@ -19,4 +19,4 @@
 ```
 
 #### 效果图
-![markdown](https://github.com/littlekite/bevylearn/blob/main/1.png)
+![markdown](https://github.com/littlekite/bevylearn/blob/main/demo.png)
