@@ -132,10 +132,10 @@ pub fn spawn_bullet(
 // 撞墙消失
 pub fn move_bullet(
     mut _commands: Commands,
-    mut transform_query: Query<(Entity, &mut Transform), With<Bullet>>,
+    mut transform_query: Query<&mut Transform, With<Bullet>>,
 ) {
     let bullet_movement = 1.0 * 5. * 1.;
-    for (_entity, mut bullet_transform) in &mut transform_query {
+    for mut bullet_transform in &mut transform_query {
         
         bullet_transform.translation.y += bullet_movement
         
