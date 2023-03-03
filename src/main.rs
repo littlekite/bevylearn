@@ -8,7 +8,7 @@ fn main() {
         window: WindowDescriptor {
             width: 800.,
             height: 600.,
-            title: "Bevy game".to_string(), // ToDo
+            title: "绝地求生".to_string(), // ToDo
             canvas: Some("#bevy".to_owned()),
             ..Default::default()
         },
