@@ -46,26 +46,16 @@ pub struct PlayerBundle {
 pub struct Stats {
     pub max_health: i32,
     pub movement_speed: f32,
+    pub bullet_num: i32
 }
 
-impl Default for Stats {
-    fn default() -> Self {
-        Stats {
-            max_health: 100,
-            movement_speed: 17000.,
-        }
-    }
-}
 
 // 坦克刷新子弹间隔
-pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 2.0;
+pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 0.1;
 
 // 坦克刷新子弹计时器
 #[derive(Component, Deref, DerefMut)]
 pub struct TankRefreshBulletTimer(pub Timer);
-
-
-
 
 
 fn step(
@@ -90,19 +80,21 @@ fn step(
     let player_bundle = SpriteBundle {
         texture:asset_server.load("player.png"),
         transform: Transform {
-            translation: Vec3::new(0., -90., 100.0),
+            translation: Vec3::new(0., -95., 100.0),
             ..default()
         },
         ..default()
     };
 
     let player_info_bundle = PlayerBundle {
-        stats: Stats { max_health: (100), movement_speed: (1500.) }
+        stats: Stats { max_health: 100, movement_speed: 15., bullet_num: 200 }
     };
-    commands.spawn(Player).insert(player_bundle).insert(TankRefreshBulletTimer(Timer::from_seconds(
+    commands.spawn(Player).insert(player_bundle).insert(
+        TankRefreshBulletTimer(Timer::from_seconds(
         TANK_REFRESH_BULLET_INTERVAL,
         TimerMode::Once,
-    ))).insert(player_info_bundle);
+    )))
+    .insert(player_info_bundle);
 
 
 
@@ -123,12 +115,25 @@ fn step(
                 font_size: 32.,
                 color: Color::BLACK,
             }),
+            TextSection::new(
+                "子弹: ",
+                TextStyle {
+                    font: asset_server.load("fonts/qingfengfuan.ttf"),
+                    font_size: 32.,
+                    color: Color::BLACK,
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font: asset_server.load("fonts/qingfengfuan.ttf"),
+                font_size: 32.,
+                color: Color::BLACK,
+            }),
         ])
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
                 top: Val::Px(550.0),
-                left: Val::Px(325.0),
+                left: Val::Px(300.0),
                 ..default()
             },
             ..default()
@@ -147,6 +152,7 @@ fn update_uiboard(
     let mut text = query.single_mut();
     let stats = transform_query.single_mut();
     text.sections[1].value = stats.max_health.to_string();
+    text.sections[3].value = stats.bullet_num.to_string();
 }
 
 
@@ -220,7 +226,7 @@ pub fn move_bullet(
 fn players_attack(
     keyboard_input: Res<Input<KeyCode>>,
     mut player: Query<
-    (&Transform, &mut TankRefreshBulletTimer),
+    (&Transform, &mut TankRefreshBulletTimer, &mut Stats),
         With<Player>,
     >,
     time: Res<Time>,
@@ -228,17 +234,21 @@ fn players_attack(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
-    for (transform, mut refresh_bullet_timer) in &mut player {
+    for (transform, mut refresh_bullet_timer,mut stats) in &mut player {
         refresh_bullet_timer.tick(time.delta());
         if keyboard_input.just_pressed(KeyCode::W) {
             if refresh_bullet_timer.finished() {
                 // TODO startup时加载texture
-                spawn_bullet(
-                    &mut commands,
-                    &asset_server,
-                    &mut texture_atlases,
-                    transform.translation,
-                );
+                //子弹数量减少
+                stats.bullet_num = stats.bullet_num - 1;
+                if stats.bullet_num > 0 {
+                    spawn_bullet(
+                        &mut commands,
+                        &asset_server,
+                        &mut texture_atlases,
+                        transform.translation,
+                    );
+                 }
                 refresh_bullet_timer.reset();
             }
         }
