@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::{quick::WorldInspectorPlugin};
-
+use rand::prelude::*;
 
 fn main() {
     let mut app = App::new();
@@ -22,7 +22,10 @@ fn main() {
     app.add_system(controlplayer);
     app.add_system(players_attack);
     app.add_system(move_bullet);
+    app.add_system(move_bullet_enemy);
     app.add_system(update_uiboard);//更新UI
+
+    app.add_system(swap_suiji_bullet);//更新UI
 
     app.add_startup_system(step);
 
@@ -33,6 +36,9 @@ fn main() {
 
 #[derive(Component)]
 pub struct Player;
+
+#[derive(Component)]
+pub struct Enemy;
 
 /// Bundle added to a fighter stub, in order to activate it.
 #[derive(Bundle)]
@@ -57,6 +63,9 @@ pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 0.1;
 #[derive(Component, Deref, DerefMut)]
 pub struct TankRefreshBulletTimer(pub Timer);
 
+//敌人随机位置的子弹计时器
+#[derive(Component, Deref, DerefMut)]
+pub struct EnemyRefreshBulletTimer(pub Timer);
 
 fn step(
     mut commands:Commands,
@@ -96,6 +105,11 @@ fn step(
     )))
     .insert(player_info_bundle);
 
+    commands.spawn(Enemy).insert(
+        EnemyRefreshBulletTimer(Timer::from_seconds(
+        0.5,
+        TimerMode::Repeating,
+    )));
 
 
     //UI生命
@@ -208,6 +222,52 @@ pub fn spawn_bullet(
         });
 }
 
+
+#[derive(Component)]
+pub struct Bulletenemy;
+
+pub fn spawn_bullet_enemy(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
+    translation: Vec3
+) {
+    let bullet_texture_handle = asset_server.load("bulletenemy.png");
+    let bullet_texture_atlas =
+        TextureAtlas::from_grid(bullet_texture_handle, Vec2::new(7.0, 8.0), 4, 1, None, None);
+    let bullet_texture_atlas_handle = texture_atlases.add(bullet_texture_atlas);
+
+    commands
+        .spawn(Bulletenemy)
+        .insert(SpriteSheetBundle {
+            texture_atlas: bullet_texture_atlas_handle,
+            sprite: TextureAtlasSprite {
+                index: 0,
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(translation.x, translation.y, translation.z),
+                ..default()
+            },
+            ..default()
+        });
+}
+
+// 炮弹移动
+// 撞墙消失
+pub fn move_bullet_enemy(
+    mut _commands: Commands,
+    mut transform_enemy_query: Query<&mut Transform, With<Bulletenemy>>
+) {
+    let bullet_movement = 1.0 * 5. * 1.;
+
+
+    for mut bullet_enemy in &mut transform_enemy_query {
+        
+        bullet_enemy.translation.y -= bullet_movement 
+    }
+}
+
 // 炮弹移动
 // 撞墙消失
 pub fn move_bullet(
@@ -215,12 +275,12 @@ pub fn move_bullet(
     mut transform_query: Query<&mut Transform, With<Bullet>>,
 ) {
     let bullet_movement = 1.0 * 5. * 1.;
-    for mut bullet_transform in &mut transform_query {
+    for mut bullet_transform_query in &mut transform_query {
         
-        bullet_transform.translation.y += bullet_movement
-        
+        bullet_transform_query.translation.y += bullet_movement 
     }
 }
+
 
 // 玩家攻击
 fn players_attack(
@@ -252,5 +312,35 @@ fn players_attack(
                 refresh_bullet_timer.reset();
             }
         }
+    }
+}
+
+//随机位置生产子弹 并向下移动
+fn swap_suiji_bullet(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    time: Res<Time>,
+    mut enemy: Query<
+    &mut EnemyRefreshBulletTimer,
+        With<Enemy>,
+    >,
+){
+    //隔一段时间  随机出现在某位置 发射随机颗子弹
+    for mut enemy_timer in &mut enemy{
+        enemy_timer.tick(time.delta());
+            if enemy_timer.finished() {
+
+                let mut rng = thread_rng();
+                let n: f32 = rng.gen_range(-140.0..140.);
+                println!("{}", n);
+                spawn_bullet_enemy(
+                    &mut commands,
+                    &asset_server,
+                    &mut texture_atlases,
+                    Vec3 { x: n, y:130., z: 100.},
+                );
+                enemy_timer.reset();
+            }
     }
 }
