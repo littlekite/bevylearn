@@ -22,6 +22,7 @@ fn main() {
     app.add_system(controlplayer);
     app.add_system(players_attack);
     app.add_system(move_bullet);
+    app.add_system(update_uiboard);//更新UI
 
     app.add_startup_system(step);
 
@@ -89,7 +90,7 @@ fn step(
     let player_bundle = SpriteBundle {
         texture:asset_server.load("player.png"),
         transform: Transform {
-            translation: Vec3::new(0., -110., 100.0),
+            translation: Vec3::new(0., -90., 100.0),
             ..default()
         },
         ..default()
@@ -104,6 +105,48 @@ fn step(
     ))).insert(player_info_bundle);
 
 
+
+    //UI生命
+    // Scoreboard
+    commands.spawn(
+        TextBundle::from_sections([
+            TextSection::new(
+                "生命: ",
+                TextStyle {
+                    font: asset_server.load("fonts/qingfengfuan.ttf"),
+                    font_size: 32.,
+                    color: Color::BLACK,
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font: asset_server.load("fonts/qingfengfuan.ttf"),
+                font_size: 32.,
+                color: Color::BLACK,
+            }),
+        ])
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                top: Val::Px(550.0),
+                left: Val::Px(325.0),
+                ..default()
+            },
+            ..default()
+        }),
+    );
+
+}
+
+fn update_uiboard(
+    mut query: Query<&mut Text>,
+    mut transform_query: Query<
+    &mut Stats,
+    With<Player>,
+    >,
+) {
+    let mut text = query.single_mut();
+    let stats = transform_query.single_mut();
+    text.sections[1].value = stats.max_health.to_string();
 }
 
 
