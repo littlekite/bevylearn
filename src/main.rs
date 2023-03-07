@@ -1,9 +1,21 @@
-use bevy::{prelude::*, window::WindowResolution};
-//use bevy_inspector_egui::{quick::WorldInspectorPlugin};
+use bevy::prelude::*;
+use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use rand::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 fn main() {
     let mut app = App::new();
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        window: WindowDescriptor {
+            width: 800.,
+            height: 600.,
+            title: "绝地求生".to_string(), // ToDo
+            canvas: Some("#bevy".to_owned()),
+            ..Default::default()
+        },
+        ..default()
+    }));
+    /*
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window{
             resolution: WindowResolution::new(800.0,600.0),
@@ -11,7 +23,8 @@ fn main() {
         }),
         ..default()
     }));
-    //app.add_plugin(WorldInspectorPlugin);
+     */
+    app.add_plugin(WorldInspectorPlugin);
 
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(1., 1., 0.87)));
@@ -23,6 +36,12 @@ fn main() {
     app.add_system(update_uiboard);//更新UI
 
     app.add_system(swap_suiji_bullet);//更新UI
+
+    app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
+    app.add_plugin(RapierDebugRenderPlugin::default());
+
+
+    app.add_system(check_collide);
 
     app.add_startup_system(step);
 
@@ -54,7 +73,7 @@ pub struct Stats {
 
 
 // 坦克刷新子弹间隔
-pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 0.1;
+pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 0.05;
 
 // 坦克刷新子弹计时器
 #[derive(Component, Deref, DerefMut)]
@@ -93,18 +112,18 @@ fn step(
     };
 
     let player_info_bundle = PlayerBundle {
-        stats: Stats { max_health: 100, movement_speed: 15., bullet_num: 200 }
+        stats: Stats { max_health: 500, movement_speed: 15., bullet_num: 200 }
     };
     commands.spawn(Player).insert(player_bundle).insert(
         TankRefreshBulletTimer(Timer::from_seconds(
         TANK_REFRESH_BULLET_INTERVAL,
         TimerMode::Once,
     )))
-    .insert(player_info_bundle);
+    .insert(player_info_bundle).insert(Collider::ball(20.0));
 
     commands.spawn(Enemy).insert(
         EnemyRefreshBulletTimer(Timer::from_seconds(
-        0.5,
+        0.1,
         TimerMode::Repeating,
     )));
 
@@ -203,6 +222,7 @@ pub fn spawn_bullet(
         TextureAtlas::from_grid(bullet_texture_handle, Vec2::new(7.0, 8.0), 4, 1, None, None);
     let bullet_texture_atlas_handle = texture_atlases.add(bullet_texture_atlas);
 
+  
     commands
         .spawn(Bullet)
         .insert(SpriteSheetBundle {
@@ -216,7 +236,7 @@ pub fn spawn_bullet(
                 ..default()
             },
             ..default()
-        });
+        }).insert(Collider::ball(3.0));
 }
 
 
@@ -247,7 +267,7 @@ pub fn spawn_bullet_enemy(
                 ..default()
             },
             ..default()
-        });
+        }).insert(Collider::ball(3.0));
 }
 
 // 炮弹移动
@@ -337,5 +357,34 @@ fn swap_suiji_bullet(
                 );
                 enemy_timer.reset();
             }
+    }
+}
+
+
+fn check_collide(
+    mut commands: Commands,
+    mut query1: Query<(Entity,
+        &mut Transform,
+        &mut Stats
+        ),
+        With<Player>,
+    >,
+    mut query2: Query<(
+        Entity,
+        &mut Transform),
+        (With<Bulletenemy>,Without<Player>),
+    >,
+){
+    for (player_ent,tranform,mut stats) in &mut query1{
+          for (enemy_bullet_ent, enemy_transform) in &query2{
+                let distance = tranform.translation.truncate().distance(enemy_transform.translation.truncate());
+                if distance < 50. {
+                    println!("检测出碰撞,距离{}",distance);
+                    commands.entity(enemy_bullet_ent).despawn_recursive();
+                    if stats.max_health > 0 {
+                        stats.max_health = stats.max_health - 5;
+                    } 
+                }
+          }
     }
 }
