@@ -1,20 +1,17 @@
-use bevy::prelude::*;
-use bevy_inspector_egui::{quick::WorldInspectorPlugin};
+use bevy::{prelude::*, window::WindowResolution};
+//use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use rand::prelude::*;
 
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        window: WindowDescriptor {
-            width: 800.,
-            height: 600.,
-            title: "绝地求生".to_string(), // ToDo
-            canvas: Some("#bevy".to_owned()),
-            ..Default::default()
-        },
+        primary_window: Some(Window{
+            resolution: WindowResolution::new(800.0,600.0),
+            ..default()
+        }),
         ..default()
     }));
-    app.add_plugin(WorldInspectorPlugin);
+    //app.add_plugin(WorldInspectorPlugin);
 
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(1., 1., 0.87)));
@@ -326,14 +323,12 @@ fn swap_suiji_bullet(
         With<Enemy>,
     >,
 ){
-    //隔一段时间  随机出现在某位置 发射随机颗子弹
+    //隔一段时间  随机出现在某位置 发射颗子弹
     for mut enemy_timer in &mut enemy{
         enemy_timer.tick(time.delta());
             if enemy_timer.finished() {
-
                 let mut rng = thread_rng();
                 let n: f32 = rng.gen_range(-140.0..140.);
-                println!("{}", n);
                 spawn_bullet_enemy(
                     &mut commands,
                     &asset_server,
