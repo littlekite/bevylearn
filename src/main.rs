@@ -112,18 +112,18 @@ fn step(
     };
 
     let player_info_bundle = PlayerBundle {
-        stats: Stats { max_health: 500, movement_speed: 15., bullet_num: 200 }
+        stats: Stats { max_health: 100, movement_speed: 15., bullet_num: 200 }
     };
     commands.spawn(Player).insert(player_bundle).insert(
         TankRefreshBulletTimer(Timer::from_seconds(
         TANK_REFRESH_BULLET_INTERVAL,
         TimerMode::Once,
     )))
-    .insert(player_info_bundle).insert(Collider::ball(20.0)).insert(ActiveEvents::COLLISION_EVENTS);
+    .insert(player_info_bundle).insert(Collider::ball(20.0));
 
     commands.spawn(Enemy).insert(
         EnemyRefreshBulletTimer(Timer::from_seconds(
-        0.1,
+        0.5,
         TimerMode::Repeating,
     )));
 
@@ -267,34 +267,46 @@ pub fn spawn_bullet_enemy(
                 ..default()
             },
             ..default()
-        }).insert(Collider::ball(3.0));
+        }).insert((
+            Collider::ball(3.0),
+            //Sensor,
+            RigidBody::Dynamic,
+            ActiveEvents::COLLISION_EVENTS,
+        ));
 }
 
 // 炮弹移动
-// 撞墙消失
+// 超出边界消失
 pub fn move_bullet_enemy(
-    mut _commands: Commands,
-    mut transform_enemy_query: Query<&mut Transform, With<Bulletenemy>>
+    mut commands: Commands,
+    mut transform_enemy_query: Query<(Entity,&mut Transform), With<Bulletenemy>>
 ) {
     let bullet_movement = 1.0 * 5. * 1.;
 
 
-    for mut bullet_enemy in &mut transform_enemy_query {
+    for (ent, mut bullet_enemy) in &mut transform_enemy_query {
         
-        bullet_enemy.translation.y -= bullet_movement 
+        bullet_enemy.translation.y -= bullet_movement; 
+        if bullet_enemy.translation.y < -150. {
+            commands.entity(ent).despawn_recursive();
+        }
+
     }
 }
 
 // 炮弹移动
 // 撞墙消失
 pub fn move_bullet(
-    mut _commands: Commands,
-    mut transform_query: Query<&mut Transform, With<Bullet>>,
+    mut commands: Commands,
+    mut transform_query: Query<(Entity,&mut Transform), With<Bullet>>,
 ) {
     let bullet_movement = 1.0 * 5. * 1.;
-    for mut bullet_transform_query in &mut transform_query {
+    for (ent,mut bullet_transform_query) in &mut transform_query {
         
-        bullet_transform_query.translation.y += bullet_movement 
+        bullet_transform_query.translation.y += bullet_movement;
+        if bullet_transform_query.translation.y > 150. {
+            commands.entity(ent).despawn_recursive();
+        }
     }
 }
 
@@ -374,9 +386,10 @@ fn check_collide(
         &mut Transform),
         (With<Bulletenemy>,Without<Player>),
     >,
+    mut collision_events: EventReader<CollisionEvent>,
     //mut active_events: Query<&mut ActiveEvents>
 ){
-    
+    /*
     for (player_ent,tranform,mut stats) in &mut query1{
           for (enemy_bullet_ent, enemy_transform) in &query2{
                 let distance = tranform.translation.truncate().distance(enemy_transform.translation.truncate());
@@ -389,6 +402,37 @@ fn check_collide(
                 }
           }
     }
-    
+    */
+    for (enemy_bullet_ent, enemy_transform) in &mut query2{
+        for event in collision_events.iter() {
+            match event {
+                CollisionEvent::Started(entity1, entity2, _flags) => {
+                    println!(
+                        "bullet: {:?}, collision entity1: {:?}, entity2: {:?}",
+                        enemy_bullet_ent, entity1, entity2
+                    );
+                    if enemy_bullet_ent == *entity1 || enemy_bullet_ent == *entity2 {
+                        info!("bullet hit something");
+                        // 另一个物体
+                        let other_entity = if enemy_bullet_ent == *entity1 {
+                            *entity2
+                        } else {
+                            *entity1
+                        };
+                        println!("{:?}",other_entity);
+                        for (player_ent,tranform,mut stats) in &mut query1{
+                            println!("{:?}",player_ent);
+                            if player_ent == other_entity {
+                                stats.max_health = stats.max_health - 5;
+                            }
+
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }    
+    }
+
   
 }
