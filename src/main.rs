@@ -119,7 +119,7 @@ fn step(
         TANK_REFRESH_BULLET_INTERVAL,
         TimerMode::Once,
     )))
-    .insert(player_info_bundle).insert(Collider::ball(20.0));
+    .insert(player_info_bundle).insert(Collider::ball(20.0)).insert(ActiveEvents::COLLISION_EVENTS);
 
     commands.spawn(Enemy).insert(
         EnemyRefreshBulletTimer(Timer::from_seconds(
@@ -374,7 +374,9 @@ fn check_collide(
         &mut Transform),
         (With<Bulletenemy>,Without<Player>),
     >,
+    //mut active_events: Query<&mut ActiveEvents>
 ){
+    
     for (player_ent,tranform,mut stats) in &mut query1{
           for (enemy_bullet_ent, enemy_transform) in &query2{
                 let distance = tranform.translation.truncate().distance(enemy_transform.translation.truncate());
@@ -387,4 +389,6 @@ fn check_collide(
                 }
           }
     }
+    
+  
 }
