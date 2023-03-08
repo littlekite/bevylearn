@@ -142,7 +142,7 @@ fn step(
     };
     commands.spawn(Enemy).insert(enemy_bundle).insert(
         EnemyRefreshBulletTimer(Timer::from_seconds(
-        2.,
+        0.5,
         TimerMode::Once,
     )))
     .insert(enemy_info_bundle).insert(Collider::ball(20.0));
@@ -347,7 +347,7 @@ pub fn move_bullet_enemy(
     for (ent, mut bullet_enemy) in &mut transform_enemy_query {
         
         bullet_enemy.translation.y -= bullet_movement; 
-        if bullet_enemy.translation.y < -150. {
+        if bullet_enemy.translation.y < -170. {
             commands.entity(ent).despawn_recursive();
         }
 
@@ -364,7 +364,7 @@ pub fn move_bullet(
     for (ent,mut bullet_transform_query) in &mut transform_query {
         
         bullet_transform_query.translation.y += bullet_movement;
-        if bullet_transform_query.translation.y > 150. {
+        if bullet_transform_query.translation.y > 170. {
             commands.entity(ent).despawn_recursive();
         }
     }
@@ -411,16 +411,19 @@ fn swap_suiji_bullet(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     time: Res<Time>,
     mut enemy: Query<
-    &mut EnemyRefreshBulletTimer,
+    (&mut EnemyRefreshBulletTimer,
+    &mut Transform),
         With<Enemy>,
     >,
 ){
     //隔一段时间  随机出现在某位置 发射颗子弹
-    for mut enemy_timer in &mut enemy{
+    for (mut enemy_timer,mut enemy_transform) in &mut enemy{
         enemy_timer.tick(time.delta());
             if enemy_timer.finished() {
                 let mut rng = thread_rng();
                 let n: f32 = rng.gen_range(-140.0..140.);
+                enemy_transform.translation = Vec3::new(n, 130., 100.);
+    
                 spawn_bullet_enemy(
                     &mut commands,
                     &asset_server,
