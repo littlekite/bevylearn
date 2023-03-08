@@ -293,7 +293,7 @@ pub fn spawn_bullet(
             ..default()
         }).insert((
             Collider::ball(3.0),
-            //Sensor,
+            Sensor,
             RigidBody::Dynamic,
             ActiveEvents::COLLISION_EVENTS,
         ));
@@ -329,7 +329,7 @@ pub fn spawn_bullet_enemy(
             ..default()
         }).insert((
             Collider::ball(3.0),
-            //Sensor,
+            Sensor,
             RigidBody::Dynamic,
             ActiveEvents::COLLISION_EVENTS,
         ));
@@ -422,7 +422,7 @@ fn swap_suiji_bullet(
             if enemy_timer.finished() {
                 let mut rng = thread_rng();
                 let n: f32 = rng.gen_range(-140.0..140.);
-                enemy_transform.translation = Vec3::new(n, 130., 100.);
+                //enemy_transform.translation = Vec3::new(n, 130., 100.);
     
                 spawn_bullet_enemy(
                     &mut commands,
