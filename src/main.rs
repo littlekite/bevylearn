@@ -7,8 +7,8 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         window: WindowDescriptor {
-            width: 800.,
-            height: 600.,
+            width: 850.,
+            height: 700.,
             title: "绝地求生".to_string(), // ToDo
             canvas: Some("#bevy".to_owned()),
             ..Default::default()
@@ -41,7 +41,8 @@ fn main() {
     app.add_plugin(RapierDebugRenderPlugin::default());
 
 
-    app.add_system(check_collide);
+    app.add_system(check_collide_player);
+    app.add_system(check_collide_enemy);
 
     app.add_startup_system(step);
 
@@ -62,7 +63,11 @@ pub struct PlayerBundle {
     pub stats: Stats
 }
 
-
+/// Bundle added to a fighter stub, in order to activate it.
+#[derive(Bundle)]
+pub struct EnemyBundle {
+    pub stats: Stats
+}
 
 #[derive(Component, Clone, Debug, Reflect)]
 pub struct Stats {
@@ -105,7 +110,7 @@ fn step(
     let player_bundle = SpriteBundle {
         texture:asset_server.load("player.png"),
         transform: Transform {
-            translation: Vec3::new(0., -95., 100.0),
+            translation: Vec3::new(0., -115., 100.0),
             ..default()
         },
         ..default()
@@ -121,14 +126,30 @@ fn step(
     )))
     .insert(player_info_bundle).insert(Collider::ball(20.0));
 
-    commands.spawn(Enemy).insert(
+
+
+    //生成敌人 enemy
+    let enemy_bundle = SpriteBundle {
+        texture:asset_server.load("enemy.png"),
+        transform: Transform {
+            translation: Vec3::new(0., 115., 100.0),
+            ..default()
+        },
+        ..default()
+    };
+    let enemy_info_bundle = EnemyBundle {
+        stats: Stats { max_health: 100, movement_speed: 15., bullet_num: 200 }
+    };
+    commands.spawn(Enemy).insert(enemy_bundle).insert(
         EnemyRefreshBulletTimer(Timer::from_seconds(
-        0.5,
-        TimerMode::Repeating,
-    )));
+        2.,
+        TimerMode::Once,
+    )))
+    .insert(enemy_info_bundle).insert(Collider::ball(20.0));
 
 
-    //UI生命
+
+    //UI生命 玩家
     // Scoreboard
     commands.spawn(
         TextBundle::from_sections([
@@ -158,12 +179,38 @@ fn step(
                 font_size: 32.,
                 color: Color::BLACK,
             }),
+            TextSection::new(
+                "敌方生命: ",
+                TextStyle {
+                    font: asset_server.load("fonts/qingfengfuan.ttf"),
+                    font_size: 32.,
+                    color: Color::BLACK,
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font: asset_server.load("fonts/qingfengfuan.ttf"),
+                font_size: 32.,
+                color: Color::BLACK,
+            }),
+            TextSection::new(
+                "敌方子弹: ",
+                TextStyle {
+                    font: asset_server.load("fonts/qingfengfuan.ttf"),
+                    font_size: 32.,
+                    color: Color::BLACK,
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font: asset_server.load("fonts/qingfengfuan.ttf"),
+                font_size: 32.,
+                color: Color::BLACK,
+            }),
         ])
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
-                top: Val::Px(550.0),
-                left: Val::Px(300.0),
+                top: Val::Px(650.0),
+                left: Val::Px(150.0),
                 ..default()
             },
             ..default()
@@ -174,15 +221,23 @@ fn step(
 
 fn update_uiboard(
     mut query: Query<&mut Text>,
-    mut transform_query: Query<
+    mut player_query: Query<
     &mut Stats,
-    With<Player>,
+    (With<Player>,Without<Enemy>),
+    >,
+    mut enemy_query: Query<
+    &mut Stats,
+    (With<Enemy>,Without<Player>),
     >,
 ) {
     let mut text = query.single_mut();
-    let stats = transform_query.single_mut();
+    let stats = player_query.single_mut();
     text.sections[1].value = stats.max_health.to_string();
     text.sections[3].value = stats.bullet_num.to_string();
+
+    let enemy_stats = enemy_query.single_mut();
+    text.sections[5].value = enemy_stats.max_health.to_string();
+    text.sections[7].value = enemy_stats.bullet_num.to_string();
 }
 
 
@@ -236,7 +291,12 @@ pub fn spawn_bullet(
                 ..default()
             },
             ..default()
-        }).insert(Collider::ball(3.0));
+        }).insert((
+            Collider::ball(3.0),
+            //Sensor,
+            RigidBody::Dynamic,
+            ActiveEvents::COLLISION_EVENTS,
+        ));
 }
 
 
@@ -373,7 +433,7 @@ fn swap_suiji_bullet(
 }
 
 
-fn check_collide(
+fn check_collide_player(
     mut commands: Commands,
     mut query1: Query<(Entity,
         &mut Transform,
@@ -386,6 +446,7 @@ fn check_collide(
         &mut Transform),
         (With<Bulletenemy>,Without<Player>),
     >,
+
     mut collision_events: EventReader<CollisionEvent>,
     //mut active_events: Query<&mut ActiveEvents>
 ){
@@ -419,14 +480,69 @@ fn check_collide(
                         } else {
                             *entity1
                         };
-                        println!("{:?}",other_entity.index());
+                        //println!("{:?}",other_entity.index());
                         for (player_ent,tranform,mut stats) in &mut query1{
                             println!("{:?}",player_ent.index());
                             if player_ent.index() == other_entity.index() {
                                 stats.max_health = stats.max_health - 5;
+                                commands.entity(enemy_bullet_ent).despawn();
                             }
 
                         }
+
+                    }
+                }
+                _ => {}
+            }
+        }    
+    }
+
+  
+}
+
+fn check_collide_enemy(
+    mut commands: Commands,
+    mut query1: Query<(Entity,
+        &mut Transform,
+        &mut Stats
+        ),
+        With<Enemy>,
+    >,
+    mut query2: Query<(
+        Entity,
+        &mut Transform),
+        (With<Bullet>,Without<Enemy>),
+    >,
+
+    mut collision_events: EventReader<CollisionEvent>,
+    //mut active_events: Query<&mut ActiveEvents>
+){
+    for (bullet_ent, transform) in &mut query2{
+        for event in collision_events.iter() {
+            match event {
+                CollisionEvent::Started(entity1, entity2, _flags) => {
+                    println!(
+                        "bullet: {:?}, collision entity1: {:?}, entity2: {:?}",
+                        bullet_ent, entity1, entity2
+                    );
+                    if bullet_ent == *entity1 || bullet_ent == *entity2 {
+                        info!("bullet hit something");
+                        // 另一个物体
+                        let other_entity = if bullet_ent == *entity1 {
+                            *entity2
+                        } else {
+                            *entity1
+                        };
+                        //println!("{:?}",other_entity.index());
+                        for (enemy_ent,tranform,mut stats) in &mut query1{
+                            println!("{:?}",enemy_ent.index());
+                            if enemy_ent.index() == other_entity.index() {
+                                stats.max_health = stats.max_health - 5;
+                                commands.entity(bullet_ent).despawn();
+                            }
+
+                        }
+
                     }
                 }
                 _ => {}
