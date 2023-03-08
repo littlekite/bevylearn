@@ -419,10 +419,10 @@ fn check_collide(
                         } else {
                             *entity1
                         };
-                        println!("{:?}",other_entity);
+                        println!("{:?}",other_entity.index());
                         for (player_ent,tranform,mut stats) in &mut query1{
-                            println!("{:?}",player_ent);
-                            if player_ent == other_entity {
+                            println!("{:?}",player_ent.index());
+                            if player_ent.index() == other_entity.index() {
                                 stats.max_health = stats.max_health - 5;
                             }
 
