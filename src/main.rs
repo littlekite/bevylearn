@@ -78,7 +78,7 @@ pub struct Stats {
 
 
 // 坦克刷新子弹间隔
-pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 0.05;
+pub const TANK_REFRESH_BULLET_INTERVAL: f32 = 0.5;
 
 // 坦克刷新子弹计时器
 #[derive(Component, Deref, DerefMut)]
@@ -220,6 +220,8 @@ fn step(
 }
 
 fn update_uiboard(
+    mut commands:Commands,
+    asset_server: Res<AssetServer>,
     mut query: Query<&mut Text>,
     mut player_query: Query<
     &mut Stats,
@@ -227,17 +229,41 @@ fn update_uiboard(
     >,
     mut enemy_query: Query<
     &mut Stats,
-    (With<Enemy>,Without<Player>),
-    >,
+    (With<Enemy>,Without<Player>)>
 ) {
     let mut text = query.single_mut();
     let stats = player_query.single_mut();
     text.sections[1].value = stats.max_health.to_string();
-    text.sections[3].value = stats.bullet_num.to_string();
+    if stats.max_health == 0 {
+        commands.spawn(SpriteBundle {
+            texture:asset_server.load("lose.png"),
+            transform: Transform {
+                translation: Vec3::new(0., 0., 500.0),
+                ..default()
+            },
+            ..default()
+        });   
+    } else {
+        text.sections[3].value = stats.bullet_num.to_string();
+    }
 
     let enemy_stats = enemy_query.single_mut();
-    text.sections[5].value = enemy_stats.max_health.to_string();
+
+    if enemy_stats.max_health == 0 {
+        commands.spawn(SpriteBundle {
+            texture:asset_server.load("win.png"),
+            transform: Transform {
+                translation: Vec3::new(0., 0., 500.0),
+                ..default()
+            },
+            ..default()
+        });   
+    } else {
+        text.sections[5].value = enemy_stats.max_health.to_string();
+
+    }
     text.sections[7].value = enemy_stats.bullet_num.to_string();
+
 }
 
 
@@ -421,14 +447,19 @@ fn swap_suiji_bullet(
         enemy_timer.tick(time.delta());
             if enemy_timer.finished() {
                 let mut rng = thread_rng();
-                let n: f32 = rng.gen_range(-140.0..140.);
-                //enemy_transform.translation = Vec3::new(n, 130., 100.);
+                //let n: f32 = rng.gen_range(-140.0..140.);
+                let n: f32 = rng.gen_range(-15.0..15.0);
+
+                enemy_transform.translation.x = enemy_transform.translation.x + n;
+                enemy_transform.translation.y = 130.;
+                enemy_transform.translation.z = 100.; 
+                //Vec3::new(n, 130., 100.);
     
                 spawn_bullet_enemy(
                     &mut commands,
                     &asset_server,
                     &mut texture_atlases,
-                    Vec3 { x: n, y:130., z: 100.},
+                    Vec3 { x: enemy_transform.translation.x, y:130., z: 100.},
                 );
                 enemy_timer.reset();
             }
@@ -487,7 +518,9 @@ fn check_collide_player(
                         for (player_ent,tranform,mut stats) in &mut query1{
                             println!("{:?}",player_ent.index());
                             if player_ent.index() == other_entity.index() {
-                                stats.max_health = stats.max_health - 5;
+                                if stats.max_health > 0 {
+                                    stats.max_health = stats.max_health - 5;
+                                }
                                 commands.entity(enemy_bullet_ent).despawn();
                             }
 
@@ -540,7 +573,9 @@ fn check_collide_enemy(
                         for (enemy_ent,tranform,mut stats) in &mut query1{
                             println!("{:?}",enemy_ent.index());
                             if enemy_ent.index() == other_entity.index() {
-                                stats.max_health = stats.max_health - 5;
+                                if stats.max_health > 0 {
+                                    stats.max_health = stats.max_health - 5;                                  
+                                }
                                 commands.entity(bullet_ent).despawn();
                             }
 
