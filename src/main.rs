@@ -60,6 +60,7 @@ fn main() {
     app.add_system(check_collide_player);
     app.add_system(check_collide_enemy);
 
+
     app.add_system(update_material_time);
 
 
@@ -186,52 +187,52 @@ fn step(
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::WHITE,
+                    color: Color::BLACK,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::WHITE,
+                color: Color::BLACK,
             }),
             TextSection::new(
                 "子弹: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::WHITE,
+                    color: Color::BLACK,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::WHITE,
+                color: Color::BLACK,
             }),
             TextSection::new(
                 "敌方生命: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::WHITE,
+                    color: Color::BLACK,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::WHITE,
+                color: Color::BLACK,
             }),
             TextSection::new(
                 "敌方子弹: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::WHITE,
+                    color: Color::BLACK,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::WHITE,
+                color: Color::BLACK
             }),
         ])
         .with_style(Style {
@@ -252,13 +253,13 @@ fn step(
         // mesh: meshes.add(shape::Plane { size: 3.0 }.into()).into(),
         mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
         transform: Transform::default().with_scale(Vec3::new(
-            800.,
+            850.,
             700.,
             0.
         )),
         material: materials.add(CustomMaterial {
             color: Color::BLUE,
-            color_texture: Some(asset_server.load("space.png")),
+            color_texture: Some(asset_server.load("back.png")),
             tile: 1.0,
             time: 0.0,
         }),
