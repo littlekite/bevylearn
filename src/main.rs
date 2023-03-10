@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::{quick::WorldInspectorPlugin};
+//use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use rand::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -30,7 +30,7 @@ fn main() {
         ..default()
     }));
      */
-    app.add_plugin(WorldInspectorPlugin);
+    //app.add_plugin(WorldInspectorPlugin);
 
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(1., 1., 0.87)));
@@ -234,8 +234,6 @@ fn step(
 }
 
 fn update_uiboard(
-    mut commands:Commands,
-    asset_server: Res<AssetServer>,
     mut query: Query<&mut Text>,
     mut player_query: Query<
     &mut Stats,
@@ -244,7 +242,10 @@ fn update_uiboard(
     mut enemy_query: Query<
     &mut Stats,
     (With<Enemy>,Without<Player>)>,
+    mut rapier_debug: ResMut<DebugRenderContext>,
 ) {
+    rapier_debug.enabled = false;
+
     let mut text = query.single_mut();
     let stats = player_query.single_mut();
     text.sections[1].value = stats.max_health.to_string();
@@ -288,7 +289,7 @@ fn gameover(
             },
             ..default()
         });   
-        info!("Switch app state to playing");
+        //info!("Switch app state to playing");
         app_state.set(AppState::Pause).unwrap();
     }
     if enemy_stats.max_health == 0 {
@@ -539,16 +540,11 @@ fn check_collide_player(
           }
     }
     */
-    for (enemy_bullet_ent, enemy_transform) in &mut query2{
+    for (enemy_bullet_ent, _enemy_transform) in &mut query2{
         for event in collision_events.iter() {
             match event {
                 CollisionEvent::Started(entity1, entity2, _flags) => {
-                    println!(
-                        "bullet: {:?}, collision entity1: {:?}, entity2: {:?}",
-                        enemy_bullet_ent, entity1, entity2
-                    );
                     if enemy_bullet_ent == *entity1 || enemy_bullet_ent == *entity2 {
-                        info!("bullet hit something");
                         // 另一个物体
                         let other_entity = if enemy_bullet_ent == *entity1 {
                             *entity2
@@ -556,8 +552,7 @@ fn check_collide_player(
                             *entity1
                         };
                         //println!("{:?}",other_entity.index());
-                        for (player_ent,tranform,mut stats) in &mut query1{
-                            println!("{:?}",player_ent.index());
+                        for (player_ent,_tranform,mut stats) in &mut query1{
                             if player_ent.index() == other_entity.index() {
                                 if stats.max_health > 0 {
                                     stats.max_health = stats.max_health - 5;
@@ -594,25 +589,18 @@ fn check_collide_enemy(
     mut collision_events: EventReader<CollisionEvent>,
     //mut active_events: Query<&mut ActiveEvents>
 ){
-    for (bullet_ent, transform) in &mut query2{
+    for (bullet_ent, _transform) in &mut query2{
         for event in collision_events.iter() {
             match event {
                 CollisionEvent::Started(entity1, entity2, _flags) => {
-                    println!(
-                        "bullet: {:?}, collision entity1: {:?}, entity2: {:?}",
-                        bullet_ent, entity1, entity2
-                    );
                     if bullet_ent == *entity1 || bullet_ent == *entity2 {
-                        info!("bullet hit something");
                         // 另一个物体
                         let other_entity = if bullet_ent == *entity1 {
                             *entity2
                         } else {
                             *entity1
                         };
-                        //println!("{:?}",other_entity.index());
-                        for (enemy_ent,tranform,mut stats) in &mut query1{
-                            println!("{:?}",enemy_ent.index());
+                        for (enemy_ent,_tranform,mut stats) in &mut query1{
                             if enemy_ent.index() == other_entity.index() {
                                 if stats.max_health > 0 {
                                     stats.max_health = stats.max_health - 5;                                  
