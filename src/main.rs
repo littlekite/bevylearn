@@ -3,6 +3,12 @@ use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use rand::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum AppState {
+    Start,
+    GameOver,
+    Pause
+}
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -43,6 +49,14 @@ fn main() {
 
     app.add_system(check_collide_player);
     app.add_system(check_collide_enemy);
+
+
+    app.add_state(AppState::Start);
+
+    app.add_system_set(
+        SystemSet::on_update(AppState::Start)
+            .with_system(gameover)
+    );
 
     app.add_startup_system(step);
 
@@ -229,11 +243,42 @@ fn update_uiboard(
     >,
     mut enemy_query: Query<
     &mut Stats,
-    (With<Enemy>,Without<Player>)>
+    (With<Enemy>,Without<Player>)>,
 ) {
     let mut text = query.single_mut();
     let stats = player_query.single_mut();
     text.sections[1].value = stats.max_health.to_string();
+    if stats.max_health > 0 {
+
+        text.sections[3].value = stats.bullet_num.to_string();
+    }
+
+    let enemy_stats = enemy_query.single_mut();
+
+    if enemy_stats.max_health > 0 {
+
+        text.sections[5].value = enemy_stats.max_health.to_string();
+
+    }
+    text.sections[7].value = enemy_stats.bullet_num.to_string();
+
+}
+
+fn gameover(    
+    mut commands:Commands,
+    asset_server: Res<AssetServer>,
+    mut player_query: Query<
+    &mut Stats,
+    (With<Player>,Without<Enemy>),
+    >,
+    mut enemy_query: Query<
+    &mut Stats,
+    (With<Enemy>,Without<Player>)>,
+    mut app_state: ResMut<State<AppState>>
+){
+    let stats = player_query.single_mut();
+    let enemy_stats = enemy_query.single_mut();
+
     if stats.max_health == 0 {
         commands.spawn(SpriteBundle {
             texture:asset_server.load("lose.png"),
@@ -243,12 +288,9 @@ fn update_uiboard(
             },
             ..default()
         });   
-    } else {
-        text.sections[3].value = stats.bullet_num.to_string();
+        info!("Switch app state to playing");
+        app_state.set(AppState::Pause).unwrap();
     }
-
-    let enemy_stats = enemy_query.single_mut();
-
     if enemy_stats.max_health == 0 {
         commands.spawn(SpriteBundle {
             texture:asset_server.load("win.png"),
@@ -257,14 +299,13 @@ fn update_uiboard(
                 ..default()
             },
             ..default()
-        });   
-    } else {
-        text.sections[5].value = enemy_stats.max_health.to_string();
-
+        }); 
+        app_state.set(AppState::Pause).unwrap();
     }
-    text.sections[7].value = enemy_stats.bullet_num.to_string();
 
 }
+
+
 
 
 fn  controlplayer(
