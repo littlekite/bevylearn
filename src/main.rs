@@ -1,5 +1,13 @@
-use bevy::prelude::*;
-//use bevy_inspector_egui::{quick::WorldInspectorPlugin};
+use bevy::{
+    prelude::*,
+    reflect::TypeUuid,
+    render::render_resource::{AsBindGroup, ShaderRef},
+    sprite::{
+        collide_aabb::collide, Material2d, Material2dPlugin, MaterialMesh2dBundle, Mesh2dHandle,
+    },
+    time::FixedTimestep,
+};
+use bevy_inspector_egui::{quick::WorldInspectorPlugin};
 use rand::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -30,10 +38,12 @@ fn main() {
         ..default()
     }));
      */
-    //app.add_plugin(WorldInspectorPlugin);
+    app.add_plugin(WorldInspectorPlugin);
 
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(1., 1., 0.87)));
+    
+    app.add_plugin(Material2dPlugin::<CustomMaterial>::default());
 
     app.add_system(controlplayer);
     app.add_system(players_attack);
@@ -41,7 +51,7 @@ fn main() {
     app.add_system(move_bullet_enemy);
     app.add_system(update_uiboard);//更新UI
 
-    app.add_system(swap_suiji_bullet);//更新UI
+    //app.add_system(swap_suiji_bullet);//更新UI
 
     app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
     app.add_plugin(RapierDebugRenderPlugin::default());
@@ -49,6 +59,8 @@ fn main() {
 
     app.add_system(check_collide_player);
     app.add_system(check_collide_enemy);
+
+    app.add_system(update_material_time);
 
 
     app.add_state(AppState::Start);
@@ -105,6 +117,8 @@ pub struct EnemyRefreshBulletTimer(pub Timer);
 fn step(
     mut commands:Commands,
     asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
 ){
     //生产照相机
     // Spawn the camera
@@ -172,52 +186,52 @@ fn step(
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
             TextSection::new(
                 "子弹: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
             TextSection::new(
                 "敌方生命: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
             TextSection::new(
                 "敌方子弹: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
         ])
         .with_style(Style {
@@ -231,7 +245,60 @@ fn step(
         }),
     );
 
+
+    //背景
+    // Background
+    commands.spawn(MaterialMesh2dBundle {
+        // mesh: meshes.add(shape::Plane { size: 3.0 }.into()).into(),
+        mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
+        transform: Transform::default().with_scale(Vec3::new(
+            800.,
+            700.,
+            0.
+        )),
+        material: materials.add(CustomMaterial {
+            color: Color::BLUE,
+            color_texture: Some(asset_server.load("space.png")),
+            tile: 1.0,
+            time: 0.0,
+        }),
+        ..default()
+    });
+
 }
+
+impl Material2d for CustomMaterial {
+    fn fragment_shader() -> ShaderRef {
+        "custom_material.wgsl".into()
+    }
+}
+
+// Background shader material
+#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
+pub struct CustomMaterial {
+    #[uniform(0)]
+    color: Color,
+    // Should we tile this material? 1 = true
+    #[uniform(0)]
+    tile: f32,
+    #[uniform(0)]
+    time: f32,
+    #[texture(1)]
+    #[sampler(2)]
+    color_texture: Option<Handle<Image>>,
+}
+
+fn update_material_time(
+    time: Res<Time>, 
+    mut materials: ResMut<Assets<CustomMaterial>>
+) {
+    materials.iter_mut().for_each(|material| {
+        material.1.time = time.elapsed_seconds();
+        println!("{:?}",material.1.time)
+    });
+}
+
 
 fn update_uiboard(
     mut query: Query<&mut Text>,
@@ -244,7 +311,7 @@ fn update_uiboard(
     (With<Enemy>,Without<Player>)>,
     mut rapier_debug: ResMut<DebugRenderContext>,
 ) {
-    rapier_debug.enabled = false;
+    //rapier_debug.enabled = false;
 
     let mut text = query.single_mut();
     let stats = player_query.single_mut();
