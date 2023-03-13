@@ -43,7 +43,7 @@ fn main() {
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(1., 1., 0.87)));
     
-    app.add_plugin(Material2dPlugin::<CustomMaterial>::default());
+    //app.add_plugin(Material2dPlugin::<CustomMaterial>::default());
 
     app.add_system(controlplayer);
     app.add_system(players_attack);
@@ -51,7 +51,7 @@ fn main() {
     app.add_system(move_bullet_enemy);
     app.add_system(update_uiboard);//更新UI
 
-    //app.add_system(swap_suiji_bullet);//更新UI
+    app.add_system(swap_suiji_bullet);//更新UI
 
     app.add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0));
     app.add_plugin(RapierDebugRenderPlugin::default());
@@ -61,7 +61,7 @@ fn main() {
     app.add_system(check_collide_enemy);
 
 
-    app.add_system(update_material_time);
+    //app.add_system(update_material_time);
 
 
     app.add_state(AppState::Start);
@@ -118,8 +118,8 @@ pub struct EnemyRefreshBulletTimer(pub Timer);
 fn step(
     mut commands:Commands,
     asset_server: Res<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
+    //mut meshes: ResMut<Assets<Mesh>>,
+    //mut materials: ResMut<Assets<CustomMaterial>>,
 ){
     //生产照相机
     // Spawn the camera
@@ -249,6 +249,7 @@ fn step(
 
     //背景
     // Background
+    /*
     commands.spawn(MaterialMesh2dBundle {
         // mesh: meshes.add(shape::Plane { size: 3.0 }.into()).into(),
         mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
@@ -265,15 +266,17 @@ fn step(
         }),
         ..default()
     });
+    */
 
 }
 
+
+/*
 impl Material2d for CustomMaterial {
     fn fragment_shader() -> ShaderRef {
         "custom_material.wgsl".into()
     }
 }
-
 // Background shader material
 #[derive(AsBindGroup, TypeUuid, Debug, Clone)]
 #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
@@ -290,6 +293,7 @@ pub struct CustomMaterial {
     color_texture: Option<Handle<Image>>,
 }
 
+
 fn update_material_time(
     time: Res<Time>, 
     mut materials: ResMut<Assets<CustomMaterial>>
@@ -299,7 +303,7 @@ fn update_material_time(
         println!("{:?}",material.1.time)
     });
 }
-
+*/
 
 fn update_uiboard(
     mut query: Query<&mut Text>,
