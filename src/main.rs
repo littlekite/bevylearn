@@ -41,9 +41,9 @@ fn main() {
     app.add_plugin(WorldInspectorPlugin);
 
     //RPG 颜色转化%255
-    app.insert_resource(ClearColor(Color::rgb(1., 1., 0.87)));
+    app.insert_resource(ClearColor(Color::rgb(0.56, 0.33, 0.23)));
     
-    //app.add_plugin(Material2dPlugin::<CustomMaterial>::default());
+    app.add_plugin(Material2dPlugin::<CustomMaterial>::default());
 
     app.add_system(controlplayer);
     app.add_system(players_attack);
@@ -59,10 +59,6 @@ fn main() {
 
     app.add_system(check_collide_player);
     app.add_system(check_collide_enemy);
-
-
-    //app.add_system(update_material_time);
-
 
     app.add_state(AppState::Start);
 
@@ -118,8 +114,8 @@ pub struct EnemyRefreshBulletTimer(pub Timer);
 fn step(
     mut commands:Commands,
     asset_server: Res<AssetServer>,
-    //mut meshes: ResMut<Assets<Mesh>>,
-    //mut materials: ResMut<Assets<CustomMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
 ){
     //生产照相机
     // Spawn the camera
@@ -187,52 +183,52 @@ fn step(
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
             TextSection::new(
                 "子弹: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
             TextSection::new(
                 "敌方生命: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK,
+                color: Color::WHITE,
             }),
             TextSection::new(
                 "敌方子弹: ",
                 TextStyle {
                     font: asset_server.load("fonts/qingfengfuan.ttf"),
                     font_size: 32.,
-                    color: Color::BLACK,
+                    color: Color::WHITE,
                 },
             ),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/qingfengfuan.ttf"),
                 font_size: 32.,
-                color: Color::BLACK
+                color: Color::WHITE
             }),
         ])
         .with_style(Style {
@@ -249,13 +245,13 @@ fn step(
 
     //背景
     // Background
-    /*
+    
     commands.spawn(MaterialMesh2dBundle {
         // mesh: meshes.add(shape::Plane { size: 3.0 }.into()).into(),
         mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
         transform: Transform::default().with_scale(Vec3::new(
-            850.,
-            700.,
+            1000.,
+            100.,
             0.
         )),
         material: materials.add(CustomMaterial {
@@ -266,12 +262,12 @@ fn step(
         }),
         ..default()
     });
-    */
+    
 
 }
 
 
-/*
+
 impl Material2d for CustomMaterial {
     fn fragment_shader() -> ShaderRef {
         "custom_material.wgsl".into()
@@ -294,16 +290,6 @@ pub struct CustomMaterial {
 }
 
 
-fn update_material_time(
-    time: Res<Time>, 
-    mut materials: ResMut<Assets<CustomMaterial>>
-) {
-    materials.iter_mut().for_each(|material| {
-        material.1.time = time.elapsed_seconds();
-        println!("{:?}",material.1.time)
-    });
-}
-*/
 
 fn update_uiboard(
     mut query: Query<&mut Text>,
@@ -555,6 +541,7 @@ fn swap_suiji_bullet(
     &mut Transform),
         With<Enemy>,
     >,
+    mut materials: ResMut<Assets<CustomMaterial>>
 ){
     //隔一段时间  随机出现在某位置 发射颗子弹
     for (mut enemy_timer,mut enemy_transform) in &mut enemy{
@@ -575,6 +562,12 @@ fn swap_suiji_bullet(
                     &mut texture_atlases,
                     Vec3 { x: enemy_transform.translation.x, y:130., z: 100.},
                 );
+
+                materials.iter_mut().for_each(|material| {
+                    material.1.time = time.elapsed_seconds();
+                    println!("{:?}",material.1.time)
+                });   
+
                 enemy_timer.reset();
             }
     }

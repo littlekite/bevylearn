@@ -20,8 +20,8 @@ fn fragment(
     if(material.tile > 0.0) {
         var tiled_uv_x: f32;
         var tiled_uv_y: f32;
-        tiled_uv_x = fract(uv.x * 5.6);
-        tiled_uv_y = fract(uv.y * 4.6 - material.time);
+        tiled_uv_x = fract(uv.x * 10. - material.time);
+        tiled_uv_y = fract(uv.y * 1.);
         tiled_uv = vec2(tiled_uv_x,tiled_uv_y);
     }
     return textureSample(base_color_texture, base_color_sampler, tiled_uv);
