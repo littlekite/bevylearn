@@ -60,6 +60,10 @@ fn main() {
     app.add_system(check_collide_player);
     app.add_system(check_collide_enemy);
 
+
+    app.add_system(update_material_time);
+
+
     app.add_state(AppState::Start);
 
     app.add_system_set(
@@ -111,6 +115,12 @@ pub struct TankRefreshBulletTimer(pub Timer);
 #[derive(Component, Deref, DerefMut)]
 pub struct EnemyRefreshBulletTimer(pub Timer);
 
+
+//UV动画
+#[derive(Component, Deref, DerefMut)]
+pub struct RefreshUVTimer(pub Timer);
+
+
 fn step(
     mut commands:Commands,
     asset_server: Res<AssetServer>,
@@ -122,7 +132,7 @@ fn step(
     let camera_bundle =  Camera2dBundle {
         transform: Transform::from_xyz(0.0, 0.0, 1000.),
         projection: OrthographicProjection {
-            scale: 0.5,
+            scale: 1.,
             ..default()
         },
         ..default()
@@ -135,7 +145,7 @@ fn step(
     let player_bundle = SpriteBundle {
         texture:asset_server.load("player.png"),
         transform: Transform {
-            translation: Vec3::new(0., -115., 100.0),
+            translation: Vec3::new(0., -250., 100.0),
             ..default()
         },
         ..default()
@@ -157,7 +167,7 @@ fn step(
     let enemy_bundle = SpriteBundle {
         texture:asset_server.load("enemy.png"),
         transform: Transform {
-            translation: Vec3::new(0., 115., 100.0),
+            translation: Vec3::new(0., 250., 100.0),
             ..default()
         },
         ..default()
@@ -244,15 +254,15 @@ fn step(
 
 
     //背景
-    // Background
+    // Back
     
     commands.spawn(MaterialMesh2dBundle {
         // mesh: meshes.add(shape::Plane { size: 3.0 }.into()).into(),
         mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
         transform: Transform::default().with_scale(Vec3::new(
             1000.,
-            100.,
-            0.
+            150.,
+            200.
         )),
         material: materials.add(CustomMaterial {
             color: Color::BLUE,
@@ -261,9 +271,22 @@ fn step(
             time: 0.0,
         }),
         ..default()
-    });
+    }).insert(
+        RefreshUVTimer(Timer::from_seconds(
+        0.5,
+        TimerMode::Once,
+    )));
     
 
+    //ground
+    commands.spawn(SpriteBundle {
+        texture:asset_server.load("ground.png"),
+        transform: Transform {
+            translation: Vec3::new(0., 0., 0.0),
+            ..default()
+        },
+        ..default()
+    }); 
 }
 
 
@@ -289,6 +312,27 @@ pub struct CustomMaterial {
     color_texture: Option<Handle<Image>>,
 }
 
+
+fn update_material_time(
+    time: Res<Time>, 
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    mut uv: Query<
+    &mut RefreshUVTimer,
+        With<RefreshUVTimer>,
+    >
+) {
+    for mut u_timer in &mut uv{
+        u_timer.tick(time.delta());
+        if u_timer.finished() {
+            materials.iter_mut().for_each(|material| {
+                material.1.time = time.elapsed_seconds();
+                println!("{:?}",material.1.time)
+            });
+            u_timer.reset();
+        }
+    }   
+
+}
 
 
 fn update_uiboard(
@@ -467,13 +511,13 @@ pub fn move_bullet_enemy(
     mut commands: Commands,
     mut transform_enemy_query: Query<(Entity,&mut Transform), With<Bulletenemy>>
 ) {
-    let bullet_movement = 1.0 * 5. * 1.;
+    let bullet_movement = 10.;
 
 
     for (ent, mut bullet_enemy) in &mut transform_enemy_query {
         
         bullet_enemy.translation.y -= bullet_movement; 
-        if bullet_enemy.translation.y < -170. {
+        if bullet_enemy.translation.y < -300. {
             commands.entity(ent).despawn_recursive();
         }
 
@@ -486,11 +530,11 @@ pub fn move_bullet(
     mut commands: Commands,
     mut transform_query: Query<(Entity,&mut Transform), With<Bullet>>,
 ) {
-    let bullet_movement = 1.0 * 5. * 1.;
+    let bullet_movement = 10.;
     for (ent,mut bullet_transform_query) in &mut transform_query {
         
         bullet_transform_query.translation.y += bullet_movement;
-        if bullet_transform_query.translation.y > 170. {
+        if bullet_transform_query.translation.y > 300. {
             commands.entity(ent).despawn_recursive();
         }
     }
@@ -541,7 +585,6 @@ fn swap_suiji_bullet(
     &mut Transform),
         With<Enemy>,
     >,
-    mut materials: ResMut<Assets<CustomMaterial>>
 ){
     //隔一段时间  随机出现在某位置 发射颗子弹
     for (mut enemy_timer,mut enemy_transform) in &mut enemy{
@@ -552,7 +595,7 @@ fn swap_suiji_bullet(
                 let n: f32 = rng.gen_range(-15.0..15.0);
 
                 enemy_transform.translation.x = enemy_transform.translation.x + n;
-                enemy_transform.translation.y = 130.;
+                enemy_transform.translation.y = 250.;
                 enemy_transform.translation.z = 100.; 
                 //Vec3::new(n, 130., 100.);
     
@@ -562,12 +605,6 @@ fn swap_suiji_bullet(
                     &mut texture_atlases,
                     Vec3 { x: enemy_transform.translation.x, y:130., z: 100.},
                 );
-
-                materials.iter_mut().for_each(|material| {
-                    material.1.time = time.elapsed_seconds();
-                    println!("{:?}",material.1.time)
-                });   
-
                 enemy_timer.reset();
             }
     }
