@@ -19,18 +19,6 @@ pub enum AppState {
 }
 fn main() {
     let mut app = App::new();
-    /*
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        window: WindowDescriptor {
-            width: 850.,
-            height: 700.,
-            title: "绝地求生".to_string(), // ToDo
-            canvas: Some("#bevy".to_owned()),
-            ..Default::default()
-        },
-        ..default()
-    }));
-    */
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window{
             resolution: WindowResolution::new(800.0,600.0),
@@ -38,7 +26,11 @@ fn main() {
         }),
         ..default()
     }));
-    
+
+    app.add_state::<AppState>();
+    app.add_system(gameover.in_set(OnUpdate(AppState::Start)));
+
+
     app.add_plugin(WorldInspectorPlugin::new());
 
     //RPG 颜色转化%255
@@ -64,8 +56,6 @@ fn main() {
 
     app.add_system(update_material_time);
 
-
- 
 
     app.add_startup_system(step);
 
@@ -373,7 +363,7 @@ fn gameover(
     mut enemy_query: Query<
     &mut Stats,
     (With<Enemy>,Without<Player>)>,
-    mut app_state: ResMut<State<AppState>>
+    mut next_state: ResMut<NextState<AppState>>,
 ){
     let stats = player_query.single_mut();
     let enemy_stats = enemy_query.single_mut();
@@ -387,7 +377,7 @@ fn gameover(
             },
             ..default()
         });   
-
+        next_state.set(AppState::Pause);
     }
     if enemy_stats.max_health == 0 {
         commands.spawn(SpriteBundle {
@@ -398,6 +388,7 @@ fn gameover(
             },
             ..default()
         });
+        next_state.set(AppState::Pause);
     }
 
 }
