@@ -4,21 +4,22 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderRef},
     sprite::{
         collide_aabb::collide, Material2d, Material2dPlugin, MaterialMesh2dBundle, Mesh2dHandle,
-    },
-    time::FixedTimestep,
+    }, window::WindowResolution
 };
-use bevy_inspector_egui::{quick::WorldInspectorPlugin};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use rand::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 pub enum AppState {
+    #[default]
     Start,
     GameOver,
     Pause
 }
 fn main() {
     let mut app = App::new();
+    /*
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         window: WindowDescriptor {
             width: 850.,
@@ -29,7 +30,7 @@ fn main() {
         },
         ..default()
     }));
-    /*
+    */
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window{
             resolution: WindowResolution::new(800.0,600.0),
@@ -37,8 +38,8 @@ fn main() {
         }),
         ..default()
     }));
-     */
-    app.add_plugin(WorldInspectorPlugin);
+    
+    app.add_plugin(WorldInspectorPlugin::new());
 
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(0.56, 0.33, 0.23)));
@@ -64,12 +65,7 @@ fn main() {
     app.add_system(update_material_time);
 
 
-    app.add_state(AppState::Start);
-
-    app.add_system_set(
-        SystemSet::on_update(AppState::Start)
-            .with_system(gameover)
-    );
+ 
 
     app.add_startup_system(step);
 
@@ -391,8 +387,7 @@ fn gameover(
             },
             ..default()
         });   
-        //info!("Switch app state to playing");
-        app_state.set(AppState::Pause).unwrap();
+
     }
     if enemy_stats.max_health == 0 {
         commands.spawn(SpriteBundle {
@@ -402,8 +397,7 @@ fn gameover(
                 ..default()
             },
             ..default()
-        }); 
-        app_state.set(AppState::Pause).unwrap();
+        });
     }
 
 }
