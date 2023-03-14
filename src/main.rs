@@ -14,8 +14,7 @@ use bevy_rapier2d::prelude::*;
 pub enum AppState {
     #[default]
     Start,
-    GameOver,
-    Pause
+    GameOver
 }
 fn main() {
     let mut app = App::new();
@@ -377,7 +376,7 @@ fn gameover(
             },
             ..default()
         });   
-        next_state.set(AppState::Pause);
+        next_state.set(AppState::GameOver);
     }
     if enemy_stats.max_health == 0 {
         commands.spawn(SpriteBundle {
@@ -388,7 +387,7 @@ fn gameover(
             },
             ..default()
         });
-        next_state.set(AppState::Pause);
+        next_state.set(AppState::GameOver);
     }
 
 }
