@@ -30,7 +30,7 @@ fn main() {
     app.add_system(gameover.in_set(OnUpdate(AppState::Start)));
 
 
-    app.add_plugin(WorldInspectorPlugin::new());
+    //app.add_plugin(WorldInspectorPlugin::new());
 
     //RPG 颜色转化%255
     app.insert_resource(ClearColor(Color::rgb(0.56, 0.33, 0.23)));
@@ -130,7 +130,7 @@ fn step(
     let player_bundle = SpriteBundle {
         texture:asset_server.load("player.png"),
         transform: Transform {
-            translation: Vec3::new(0., -250., 100.0),
+            translation: Vec3::new(0., -200., 100.0),
             ..default()
         },
         ..default()
@@ -152,7 +152,7 @@ fn step(
     let enemy_bundle = SpriteBundle {
         texture:asset_server.load("enemy.png"),
         transform: Transform {
-            translation: Vec3::new(0., 250., 100.0),
+            translation: Vec3::new(0., 200., 100.0),
             ..default()
         },
         ..default()
@@ -229,7 +229,7 @@ fn step(
         .with_style(Style {
             position_type: PositionType::Absolute,
             position: UiRect {
-                top: Val::Px(650.0),
+                top: Val::Px(550.0),
                 left: Val::Px(150.0),
                 ..default()
             },
@@ -331,7 +331,7 @@ fn update_uiboard(
     (With<Enemy>,Without<Player>)>,
     mut rapier_debug: ResMut<DebugRenderContext>,
 ) {
-    //rapier_debug.enabled = false;
+    rapier_debug.enabled = false;
 
     let mut text = query.single_mut();
     let stats = player_query.single_mut();
